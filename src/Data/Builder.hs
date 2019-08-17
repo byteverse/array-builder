@@ -9,8 +9,6 @@ module Data.Builder
   , singleton
     -- * Run
   , run
-  , flatten
-  , ReversedChunks(..)
   ) where
 
 import Data.Primitive (SmallArray(SmallArray))
@@ -20,77 +18,43 @@ import GHC.Exts (writeSmallArray#,unsafeFreezeSmallArray#)
 import GHC.Exts (SmallMutableArray#,freezeSmallArray#)
 import GHC.Exts (newSmallArray#,sizeofSmallArray#)
 import GHC.Exts ((*#),(+#),(-#),(>#))
+import Data.Chunks (Chunks(ChunksNil,ChunksCons))
 
+import qualified Data.Chunks as C
 import qualified Data.Foldable as F
 import qualified Data.Primitive as PM
 
 -- | Builder for an array of boxed elements. 
 newtype Builder a = Builder
-  (forall s. SmallMutableArray# s a -> Int# -> Int# -> ReversedChunks a -> State# s
-   -> (# State# s, SmallMutableArray# s a, Int#, Int#, ReversedChunks a #)
+  -- The chunks being built up are in reverse order.
+  -- Consequently, functions that run a builder must
+  -- reverse the chunks at the end.
+  (forall s. SmallMutableArray# s a -> Int# -> Int# -> Chunks a -> State# s
+   -> (# State# s, SmallMutableArray# s a, Int#, Int#, Chunks a #)
   )
 
--- | A chunked array. The chunks are in reverse order,
--- but the elements within each chunk are in order.
--- The 'Foldable' instance iterates over the chunks in
--- reverse in order to provide the behavior that a user
--- would expect.
-data ReversedChunks a
-  = ReversedChunksCons !(SmallArray a) !(ReversedChunks a)
-  | ReversedChunksNil
-
-instance Foldable ReversedChunks where
-  foldr = revChunksFoldr
-  foldr' = revChunksFoldr'
-  length = revChunksLength 0
-
-revChunksFoldr :: (a -> b -> b) -> b -> ReversedChunks a -> b
-{-# inline revChunksFoldr #-}
-revChunksFoldr f = go where
-  go acc ReversedChunksNil = acc
-  go acc (ReversedChunksCons c cs) = 
-    go (F.foldr f acc c) cs
-
-revChunksFoldr' :: (a -> b -> b) -> b -> ReversedChunks a -> b
-{-# inline revChunksFoldr' #-}
-revChunksFoldr' f = go where
-  go !acc ReversedChunksNil = acc
-  go !acc (ReversedChunksCons c cs) = 
-    go (F.foldr' f acc c) cs
-
-run :: Builder a -> ReversedChunks a
+run :: Builder a -> Chunks a
 run (Builder f) = case runRW#
   -- The initial size of 16 elements is chosen somewhat
   -- arbitrarily. It is more than enough to saturate a
   -- cache line.
   (\s0 -> case newSmallArray# 16# errorThunk s0 of
-    (# s1, marr0 #) -> case f marr0 0# 16# ReversedChunksNil s1 of
+    (# s1, marr0 #) -> case f marr0 0# 16# ChunksNil s1 of
       (# s2, marr, off, _, cs #) ->
         -- Recall that freezeSmallArray copies a slice.
         -- If resize functions ever become available for
         -- SmallArray, we should use that instead.
         case freezeSmallArray# marr 0# off s2 of
           (# s3, arr #) ->
-            let !r = ReversedChunksCons (SmallArray arr) cs in
-            (# s3, r #)
+            let !r = C.reverseOnto
+                  (ChunksCons (SmallArray arr) ChunksNil)
+                  cs
+             in (# s3, r #)
   ) of (# _, cs #) -> cs
-
-flatten :: ReversedChunks a -> SmallArray a
-flatten cs = runSmallArrayST $ do
-  let !len = revChunksLength 0 cs
-  !marr <- PM.newSmallArray len errorThunk
-  -- TODO: write this
-  -- let go 
-  PM.unsafeFreezeSmallArray marr
 
 errorThunk :: a
 {-# noinline errorThunk #-}
 errorThunk = error "array-builder:Data.Builder: error"
-
-revChunksLength :: Int -> ReversedChunks a -> Int
-revChunksLength !n ReversedChunksNil = n
-revChunksLength !n (ReversedChunksCons c cs) =
-  revChunksLength (n + PM.sizeofSmallArray c) cs
 
 instance Monoid (Builder a) where
   {-# inline mempty #-}
@@ -117,7 +81,7 @@ singleton a = Builder
       (# s1, arr #) -> let !lenNew = nextLength (sizeofSmallArray# arr) in
         case newSmallArray# lenNew a s1 of
           (# s2, marrNew #) ->
-            let !csNew = ReversedChunksCons (SmallArray arr) cs in
+            let !csNew = ChunksCons (SmallArray arr) cs in
               (# s2, marrNew, 1#, lenNew -# 1#, csNew #)
   )
 
