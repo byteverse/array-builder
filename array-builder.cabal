@@ -1,4 +1,4 @@
-cabal-version:       2.2
+cabal-version: 2.2
 name: array-builder
 version: 0.1.0.0
 synopsis: Builders for arrays

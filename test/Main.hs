@@ -35,4 +35,6 @@ tests = testGroup "Tests"
       <> singleton 'D'
       )
     )
+  , THU.testCase "C" $ (L.replicate 500 'X') @=?
+    (F.toList $ run (stimes (500 :: Int) (singleton 'X')))
   ]

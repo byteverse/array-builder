@@ -6,6 +6,7 @@
 module Data.Builder
   ( -- * Builder
     Builder(..)
+  , cons
   , singleton
     -- * Run
   , run
@@ -24,7 +25,7 @@ import qualified Data.Chunks as C
 import qualified Data.Foldable as F
 import qualified Data.Primitive as PM
 
--- | Builder for an array of boxed elements. 
+-- | Builder for an array of boxed elements.
 newtype Builder a = Builder
   -- The chunks being built up are in reverse order.
   -- Consequently, functions that run a builder must
@@ -71,14 +72,20 @@ instance Semigroup (Builder a) where
         g marr1 off1 len1 cs1 s1
     )
 
+cons :: a -> Builder a -> Builder a
+{-# inline cons #-}
+cons a b = singleton a <> b
+
 singleton :: a -> Builder a
-{-# inline singleton #-}
+{-# noinline singleton #-}
 singleton a = Builder
   (\marr off len cs s0 -> case len ># 0# of
     1# -> case writeSmallArray# marr off a s0 of
       s1 -> (# s1, marr, off +# 1#, len -# 1#, cs #)
     _ -> case unsafeFreezeSmallArray# marr s0 of
       (# s1, arr #) -> let !lenNew = nextLength (sizeofSmallArray# arr) in
+        -- Since we feed the element to newSmallArray#, we do not
+        -- need to write it to the 0 index.
         case newSmallArray# lenNew a s1 of
           (# s2, marrNew #) ->
             let !csNew = ChunksCons (SmallArray arr) cs in
