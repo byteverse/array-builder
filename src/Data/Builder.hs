@@ -13,18 +13,15 @@ module Data.Builder
   ) where
 
 import Compat (unsafeShrinkAndFreeze#)
-import Data.Primitive (SmallArray(SmallArray))
-import Control.Monad.ST.Run (runSmallArrayST)
-import GHC.Exts (State#,Int#,runRW#)
-import GHC.Exts (writeSmallArray#,unsafeFreezeSmallArray#)
-import GHC.Exts (SmallMutableArray#,freezeSmallArray#)
-import GHC.Exts (newSmallArray#,sizeofSmallArray#)
-import GHC.Exts ((*#),(+#),(-#),(>#))
 import Data.Chunks (Chunks(ChunksNil,ChunksCons))
+import Data.Primitive (SmallArray(SmallArray))
+import GHC.Exts ((*#),(+#),(-#),(>#))
+import GHC.Exts (SmallMutableArray#)
+import GHC.Exts (State#,Int#,runRW#)
+import GHC.Exts (newSmallArray#,sizeofSmallArray#)
+import GHC.Exts (writeSmallArray#,unsafeFreezeSmallArray#)
 
 import qualified Data.Chunks as C
-import qualified Data.Foldable as F
-import qualified Data.Primitive as PM
 
 -- | Builder for an array of boxed elements.
 newtype Builder a = Builder

@@ -19,10 +19,10 @@ library
   other-modules:
     Compat
   build-depends:
+    , array-chunks >=0.1 && <0.2
     , base >=4.12 && <5
     , primitive >=0.6.4 && <0.8
     , run-st >=0.1 && <0.2
-    , array-chunks >=0.1 && <0.2
   hs-source-dirs: src
   if impl(ghc >= 8.9)
     hs-source-dirs: src-post-8.9
@@ -36,8 +36,8 @@ test-suite test
   hs-source-dirs: test
   main-is: Main.hs
   build-depends:
-    , base
     , array-builder
+    , base
     , tasty
     , tasty-hunit
   ghc-options: -Wall -O2

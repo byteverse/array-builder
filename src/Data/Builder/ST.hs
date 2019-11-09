@@ -8,11 +8,11 @@ module Data.Builder.ST
   ) where
 
 import Compat (unsafeShrinkAndFreeze)
-import Data.Primitive (SmallMutableArray)
 import Control.Monad.ST (ST)
+import Data.Chunks (Chunks(ChunksNil,ChunksCons))
+import Data.Primitive (SmallMutableArray)
 import Data.Primitive (newSmallArray,writeSmallArray,unsafeFreezeSmallArray)
 import Data.Primitive (sizeofSmallArray)
-import Data.Chunks (Chunks(ChunksNil,ChunksCons))
 import Foreign.Storable (sizeOf)
 
 import qualified Data.Chunks as C
