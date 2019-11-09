@@ -12,6 +12,7 @@ module Data.Builder
   , run
   ) where
 
+import Compat (unsafeShrinkAndFreeze#)
 import Data.Primitive (SmallArray(SmallArray))
 import Control.Monad.ST.Run (runSmallArrayST)
 import GHC.Exts (State#,Int#,runRW#)
@@ -45,7 +46,7 @@ run (Builder f) = case runRW#
         -- Recall that freezeSmallArray copies a slice.
         -- If resize functions ever become available for
         -- SmallArray, we should use that instead.
-        case freezeSmallArray# marr 0# off s2 of
+        case unsafeShrinkAndFreeze# marr off s2 of
           (# s3, arr #) ->
             let !r = C.reverseOnto
                   (ChunksCons (SmallArray arr) ChunksNil)

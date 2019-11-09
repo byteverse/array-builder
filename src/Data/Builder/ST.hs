@@ -7,10 +7,11 @@ module Data.Builder.ST
   , freeze 
   ) where
 
+import Compat (unsafeShrinkAndFreeze)
 import Data.Primitive (SmallMutableArray)
 import Control.Monad.ST (ST)
 import Data.Primitive (newSmallArray,writeSmallArray,unsafeFreezeSmallArray)
-import Data.Primitive (sizeofSmallArray,freezeSmallArray)
+import Data.Primitive (sizeofSmallArray)
 import Data.Chunks (Chunks(ChunksNil,ChunksCons))
 import Foreign.Storable (sizeOf)
 
@@ -55,8 +56,8 @@ push a (Builder marr off len cs) = case len > 0 of
     pure $! Builder marrNew 1 (lenNew - 1) csNew
 
 -- The sequence of sizes we create is:
---   64-bit: 14, 30, 62, 126, 254, 254, 254...
---   32-bit: 14, 30, 62, 126, 254, 510, 510, 510...
+--   64-bit: 6, 14, 30, 62, 126, 254, 254, 254...
+--   32-bit: 6, 14, 30, 62, 126, 254, 510, 510, 510...
 -- The goal is to have objects whose sizes are increasing
 -- powers of 2 until we reach the size of a block (4KB).
 -- A 254-element SmallArray on a 64-bit platform uses
@@ -81,7 +82,7 @@ freeze ::
      Builder s a -- ^ Builder, do not reuse after freezing
   -> ST s (Chunks a)
 freeze (Builder marr off _ cs) = do
-  arr <- freezeSmallArray marr 0 off
+  arr <- unsafeShrinkAndFreeze marr off
   pure $! C.reverseOnto (ChunksCons arr ChunksNil) cs
 
 errorThunk :: a
