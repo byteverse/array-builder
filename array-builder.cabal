@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name: array-builder
-version: 0.1.0.0
+version: 0.1.1.0
 synopsis: Builders for arrays
 homepage: https://github.com/andrewthad/array-builder
 bug-reports: https://github.com/andrewthad/array-builder/issues

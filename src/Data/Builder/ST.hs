@@ -3,6 +3,7 @@
 module Data.Builder.ST
   ( Builder(..)
   , new
+  , new1
   , push
   , freeze 
   ) where
@@ -35,6 +36,17 @@ new :: ST s (Builder s a)
 new = do
   marr <- newSmallArray initialLength errorThunk
   pure (Builder marr 0 initialLength ChunksNil)
+
+-- | Create a new 'Builder' with a single element. Useful when builder
+-- creation is immidiately followed by 'push'. Note that:
+--
+-- > new >>= push x ≡ new1 x
+--
+-- But 'new1' performs slightly better.
+new1 :: a -> ST s (Builder s a)
+new1 a0 = do
+  marr <- newSmallArray initialLength a0
+  pure (Builder marr 1 initialLength ChunksNil)
 
 -- | Push an element onto the end of the builder. This
 -- is not strict in the element, so force it before pushing
