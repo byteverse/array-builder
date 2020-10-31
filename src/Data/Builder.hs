@@ -8,6 +8,8 @@ module Data.Builder
     Builder(..)
   , cons
   , singleton
+  , doubleton
+  , tripleton
     -- * Run
   , run
   ) where
@@ -18,7 +20,7 @@ import Data.Primitive (SmallArray(SmallArray))
 import GHC.Exts ((*#),(+#),(-#),(>#))
 import GHC.Exts (SmallMutableArray#)
 import GHC.Exts (State#,Int#,runRW#)
-import GHC.Exts (newSmallArray#,sizeofSmallArray#)
+import GHC.Exts (newSmallArray#)
 import GHC.Exts (writeSmallArray#,unsafeFreezeSmallArray#)
 
 import qualified Data.Chunks as C
@@ -74,6 +76,7 @@ cons :: a -> Builder a -> Builder a
 {-# inline cons #-}
 cons a b = singleton a <> b
 
+-- | A builder with one element.
 singleton :: a -> Builder a
 {-# noinline singleton #-}
 singleton a = Builder
@@ -81,13 +84,55 @@ singleton a = Builder
     1# -> case writeSmallArray# marr off a s0 of
       s1 -> (# s1, marr, off +# 1#, len -# 1#, cs #)
     _ -> case unsafeFreezeSmallArray# marr s0 of
-      (# s1, arr #) -> let !lenNew = nextLength (sizeofSmallArray# arr) in
+      (# s1, arr #) -> let !lenNew = nextLength off in
         -- Since we feed the element to newSmallArray#, we do not
         -- need to write it to the 0 index.
         case newSmallArray# lenNew a s1 of
           (# s2, marrNew #) ->
             let !csNew = ChunksCons (SmallArray arr) cs in
               (# s2, marrNew, 1#, lenNew -# 1#, csNew #)
+  )
+
+-- | A builder with two elements.
+--
+-- @since 0.1.1.0
+doubleton :: a -> a -> Builder a
+{-# noinline doubleton #-}
+doubleton a b = Builder
+  (\marr off len cs s0 -> case len ># 1# of
+    1# -> case writeSmallArray# marr off a s0 of
+      s1 -> case writeSmallArray# marr (off +# 1#) b s1 of
+        s2 -> (# s2, marr, off +# 2#, len -# 2#, cs #)
+    _ -> case unsafeShrinkAndFreeze# marr off s0 of
+      (# s1, arr #) -> let !lenNew = nextLength off in
+        -- Since we feed the element to newSmallArray#, we do not
+        -- need to write element a to the 0 index.
+        case newSmallArray# lenNew a s1 of
+          (# s2, marrNew #) -> case writeSmallArray# marrNew 1# b s2 of
+            s3 -> let !csNew = ChunksCons (SmallArray arr) cs in
+              (# s3, marrNew, 2#, lenNew -# 2#, csNew #)
+  )
+
+-- | A builder with three elements.
+--
+-- @since 0.1.1.0
+tripleton :: a -> a -> a -> Builder a
+{-# noinline tripleton #-}
+tripleton a b c = Builder
+  (\marr off len cs s0 -> case len ># 1# of
+    1# -> case writeSmallArray# marr off a s0 of
+      s1 -> case writeSmallArray# marr (off +# 1#) b s1 of
+        s2 -> case writeSmallArray# marr (off +# 2#) c s2 of
+          s3 -> (# s3, marr, off +# 3#, len -# 3#, cs #)
+    _ -> case unsafeShrinkAndFreeze# marr off s0 of
+      (# s1, arr #) -> let !lenNew = nextLength off in
+        -- Since we feed the element to newSmallArray#, we do not
+        -- need to write element a to the 0 index.
+        case newSmallArray# lenNew a s1 of
+          (# s2, marrNew #) -> case writeSmallArray# marrNew 1# b s2 of
+            s3 -> case writeSmallArray# marrNew 2# c s3 of
+              s4 -> let !csNew = ChunksCons (SmallArray arr) cs in
+                (# s4, marrNew, 3#, lenNew -# 3#, csNew #)
   )
 
 nextLength :: Int# -> Int#
