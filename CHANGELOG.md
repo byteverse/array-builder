@@ -1,5 +1,9 @@
 # Revision history for array-builder
 
+## 0.1.2.0 -- 2022-??-??
+
+* Add `Data.Builder.Catenable` module.
+
 ## 0.1.1.0 -- 2020-11-18
 
 * Add `new1`.

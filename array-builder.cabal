@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name: array-builder
-version: 0.1.1.0
+version: 0.1.2.0
 synopsis: Builders for arrays
 homepage: https://github.com/andrewthad/array-builder
 bug-reports: https://github.com/andrewthad/array-builder/issues
@@ -15,6 +15,7 @@ extra-source-files: CHANGELOG.md
 library
   exposed-modules:
     Data.Builder
+    Data.Builder.Catenable
     Data.Builder.ST
   other-modules:
     Compat

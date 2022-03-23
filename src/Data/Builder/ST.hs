@@ -5,7 +5,7 @@ module Data.Builder.ST
   , new
   , new1
   , push
-  , freeze 
+  , freeze
   ) where
 
 import Compat (unsafeShrinkAndFreeze)
