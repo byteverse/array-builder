@@ -1,5 +1,6 @@
 {-# language BangPatterns #-}
 {-# language PatternSynonyms #-}
+{-# language TypeFamilies #-}
 
 -- | Builder with cheap concatenation. Like the builder type from
 -- @Data.Builder.ST@, this builder can be stored somewhere and this used
@@ -39,8 +40,11 @@ module Data.Builder.Catenable
 
 import Control.Monad.ST (ST,runST)
 import Data.Chunks (Chunks)
+import Data.Foldable (foldl')
+import GHC.Exts (IsList(..))
 
 import qualified Data.Builder.ST as STB
+import qualified Data.Chunks as Chunks
 
 infixr 5 :<
 infixl 5 :>
@@ -58,6 +62,11 @@ instance Monoid (Builder a) where
 instance Semigroup (Builder a) where
   {-# inline (<>) #-}
   (<>) = Append
+
+instance IsList (Builder a) where
+  type Item (Builder a) = a
+  toList = toList . Chunks.concat . run
+  fromList = foldl' (\acc x -> acc :> x) Empty
 
 pattern (:<) :: a -> Builder a -> Builder a
 pattern (:<) x y = Cons x y
