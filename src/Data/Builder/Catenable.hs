@@ -34,6 +34,10 @@ module Data.Builder.Catenable
     -- * Convenient infix operators
   , pattern (:<)
   , pattern (:>)
+    -- * Functions
+  , singleton
+  , doubleton
+  , tripleton
     -- * Run
   , run
   ) where
@@ -93,3 +97,15 @@ pushCatenable !bldr0 b = case b of
   Append x y -> do
     bldr1 <- pushCatenable bldr0 x
     pushCatenable bldr1 y
+
+singleton :: a -> Builder a
+{-# inline singleton #-}
+singleton a = Cons a Empty
+
+doubleton :: a -> a -> Builder a
+{-# inline doubleton #-}
+doubleton a b = Cons a (Cons b Empty)
+
+tripleton :: a -> a -> a -> Builder a
+{-# inline tripleton #-}
+tripleton a b c = Append (Cons a (Cons b Empty)) (Cons c Empty)
