@@ -1,5 +1,11 @@
 # Revision history for array-builder
 
+## 0.1.3.0 -- 2022-??-??
+
+* Add `length`, `shortText`, `char`, `word32Dec`, `word64Dec`, `int32Dec`, `int64Dec`
+  to `Data.Builder.Catenable.Text`.
+
+
 ## 0.1.2.0 -- 2022-08-09
 
 * Add `Data.Builder.Catenable` module.
