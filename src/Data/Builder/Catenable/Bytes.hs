@@ -10,12 +10,21 @@ module Data.Builder.Catenable.Bytes
   , pattern (:>)
     -- * Run
   , run
+    -- * Properties
+  , length
+    -- * Create
+  , bytes
+  , byteArray
   ) where
+
+import Prelude hiding (length)
 
 import Control.Monad.ST (ST,runST)
 import Data.Bytes (Bytes)
 import Data.Bytes.Chunks (Chunks(ChunksNil))
+import Data.Primitive (ByteArray)
 
+import qualified Data.Bytes as Bytes
 import qualified Data.Bytes.Builder as BB
 import qualified Data.Bytes.Builder.Unsafe as BBU
 
@@ -42,6 +51,14 @@ pattern (:<) x y = Cons x y
 pattern (:>) :: Builder -> Bytes -> Builder
 pattern (:>) x y = Snoc x y
 
+-- | Number of bytes in the sequence.
+length :: Builder -> Int
+length b0 = case b0 of
+  Empty -> 0
+  Cons x b1 -> Bytes.length x + length b1
+  Snoc b1 x -> Bytes.length x + length b1
+  Append x y -> length x + length y
+
 run :: Builder -> Chunks
 {-# noinline run #-}
 run b = runST $ do
@@ -62,4 +79,8 @@ pushCatenable !bldr0 b = case b of
     bldr1 <- pushCatenable bldr0 x
     pushCatenable bldr1 y
 
+bytes :: Bytes -> Builder
+bytes !b = Cons b Empty
 
+byteArray :: ByteArray -> Builder
+byteArray !b = Cons (Bytes.fromByteArray b) Empty

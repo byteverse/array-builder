@@ -4,7 +4,7 @@
 
 * Add `length`, `shortText`, `char`, `word32Dec`, `word64Dec`, `int32Dec`, `int64Dec`
   to `Data.Builder.Catenable.Text`.
-
+* Add `length`, `bytes`, and `byteArray` to `Data.Builder.Catenable.Bytes`.
 
 ## 0.1.2.0 -- 2022-08-09
 
