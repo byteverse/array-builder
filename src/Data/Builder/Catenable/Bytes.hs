@@ -15,6 +15,11 @@ module Data.Builder.Catenable.Bytes
     -- * Create
   , bytes
   , byteArray
+    -- * Mimic data constructors
+  , cons
+  , snoc
+  , append
+  , empty
   ) where
 
 import Prelude hiding (length)
@@ -84,3 +89,19 @@ bytes !b = Cons b Empty
 
 byteArray :: ByteArray -> Builder
 byteArray !b = Cons (Bytes.fromByteArray b) Empty
+
+snoc :: Builder -> Bytes -> Builder
+{-# inline snoc #-}
+snoc = Snoc
+
+cons :: Bytes -> Builder -> Builder
+{-# inline cons #-}
+cons = Cons
+
+empty :: Builder
+{-# inline empty #-}
+empty = Empty
+
+append :: Builder -> Builder -> Builder
+{-# inline append #-}
+append = Append
