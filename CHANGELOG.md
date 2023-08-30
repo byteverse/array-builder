@@ -1,5 +1,9 @@
 # Revision history for array-builder
 
+## 0.1.4.0 -- 2023-08-30
+
+* Add `constructN` functions to Data.Builder.Catenable.Bytes.
+
 ## 0.1.3.0 -- 2022-04-11
 
 * Add `length`, `shortText`, `char`, `word32Dec`, `word64Dec`, `int32Dec`, `int64Dec`
