@@ -1,5 +1,9 @@
 # Revision history for array-builder
 
+## 0.1.4.1 -- 2024-02-01
+
+* Update package metadata.
+
 ## 0.1.4.0 -- 2023-08-30
 
 * Add `constructN` functions to Data.Builder.Catenable.Bytes.

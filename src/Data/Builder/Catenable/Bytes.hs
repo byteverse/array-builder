@@ -1,20 +1,25 @@
-{-# language BangPatterns #-}
-{-# language PatternSynonyms #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- | @Data.Builder.Bytes@ specialized to @Bytes@.
 module Data.Builder.Catenable.Bytes
   ( -- * Type
-    Builder(..)
+    Builder (..)
+
     -- * Convenient infix operators
   , pattern (:<)
   , pattern (:>)
+
     -- * Run
   , run
+
     -- * Properties
   , length
+
     -- * Create
   , bytes
   , byteArray
+
     -- * Mimic data constructors
   , cons
   , snoc
@@ -24,9 +29,9 @@ module Data.Builder.Catenable.Bytes
 
 import Prelude hiding (length)
 
-import Control.Monad.ST (ST,runST)
+import Control.Monad.ST (ST, runST)
 import Data.Bytes (Bytes)
-import Data.Bytes.Chunks (Chunks(ChunksNil))
+import Data.Bytes.Chunks (Chunks (ChunksNil))
 import Data.Primitive (ByteArray)
 
 import qualified Data.Bytes as Bytes
@@ -43,11 +48,11 @@ data Builder
   | Append !Builder !Builder
 
 instance Monoid Builder where
-  {-# inline mempty #-}
+  {-# INLINE mempty #-}
   mempty = Empty
 
 instance Semigroup Builder where
-  {-# inline (<>) #-}
+  {-# INLINE (<>) #-}
   (<>) = Append
 
 pattern (:<) :: Bytes -> Builder -> Builder
@@ -65,7 +70,7 @@ length b0 = case b0 of
   Append x y -> length x + length y
 
 run :: Builder -> Chunks
-{-# noinline run #-}
+{-# NOINLINE run #-}
 run b = runST $ do
   bldr0 <- BBU.newBuilderState 128
   bldr1 <- pushCatenable bldr0 b
@@ -91,17 +96,17 @@ byteArray :: ByteArray -> Builder
 byteArray !b = Cons (Bytes.fromByteArray b) Empty
 
 snoc :: Builder -> Bytes -> Builder
-{-# inline snoc #-}
+{-# INLINE snoc #-}
 snoc = Snoc
 
 cons :: Bytes -> Builder -> Builder
-{-# inline cons #-}
+{-# INLINE cons #-}
 cons = Cons
 
 empty :: Builder
-{-# inline empty #-}
+{-# INLINE empty #-}
 empty = Empty
 
 append :: Builder -> Builder -> Builder
-{-# inline append #-}
+{-# INLINE append #-}
 append = Append

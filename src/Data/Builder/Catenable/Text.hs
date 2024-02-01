@@ -1,17 +1,21 @@
-{-# language BangPatterns #-}
-{-# language PatternSynonyms #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- | @Data.Builder.Catenable@ specialized to @ShortText@.
 module Data.Builder.Catenable.Text
   ( -- * Type
-    Builder(..)
+    Builder (..)
+
     -- * Convenient infix operators
   , pattern (:<)
   , pattern (:>)
+
     -- * Run
   , run
+
     -- * Properties
   , length
+
     -- * Create
   , shortText
   , char
@@ -23,14 +27,14 @@ module Data.Builder.Catenable.Text
 
 import Prelude hiding (length)
 
-import Control.Monad.ST (ST,runST)
-import Data.ByteString.Short.Internal (ShortByteString(SBS))
-import Data.Bytes.Chunks (Chunks(ChunksNil))
-import Data.Int (Int32,Int64)
-import Data.Primitive (ByteArray(ByteArray))
-import Data.String (IsString(fromString))
+import Control.Monad.ST (ST, runST)
+import Data.ByteString.Short.Internal (ShortByteString (SBS))
+import Data.Bytes.Chunks (Chunks (ChunksNil))
+import Data.Int (Int32, Int64)
+import Data.Primitive (ByteArray (ByteArray))
+import Data.String (IsString (fromString))
 import Data.Text.Short (ShortText)
-import Data.Word (Word32,Word64)
+import Data.Word (Word32, Word64)
 
 import qualified Arithmetic.Nat as Nat
 import qualified Data.Bytes.Builder as BB
@@ -75,22 +79,24 @@ length b0 = case b0 of
   Snoc b1 x -> TS.length x + length b1
   Append x y -> length x + length y
 
--- | Note: The choice of appending to the left side of @Empty@ instead
--- of the right side of arbitrary. Under ordinary use, this difference
--- cannot be observed by the user.
+{- | Note: The choice of appending to the left side of @Empty@ instead
+of the right side of arbitrary. Under ordinary use, this difference
+cannot be observed by the user.
+-}
 instance IsString Builder where
   fromString t = Cons (TS.pack t) Empty
 
 instance Monoid Builder where
-  {-# inline mempty #-}
+  {-# INLINE mempty #-}
   mempty = Empty
 
 instance Semigroup Builder where
-  {-# inline (<>) #-}
+  {-# INLINE (<>) #-}
   (<>) = Append
 
--- | Not structural equality. Converts builders to chunks and then
--- compares the chunks.
+{- | Not structural equality. Converts builders to chunks and then
+compares the chunks.
+-}
 instance Eq Builder where
   a == b = run a == run b
 
@@ -98,7 +104,7 @@ instance Show Builder where
   show b = TS.unpack (ba2st (Chunks.concatU (run b)))
 
 ba2st :: ByteArray -> ShortText
-{-# inline ba2st #-}
+{-# INLINE ba2st #-}
 ba2st (ByteArray x) = TS.fromShortByteStringUnsafe (SBS x)
 
 pattern (:<) :: ShortText -> Builder -> Builder
@@ -107,11 +113,12 @@ pattern (:<) x y = Cons x y
 pattern (:>) :: Builder -> ShortText -> Builder
 pattern (:>) x y = Snoc x y
 
--- | The result is chunks, but this is guaranteed to be UTF-8 encoded
--- text, so if needed, you can flatten out the chunks and convert back
--- to @ShortText@.
+{- | The result is chunks, but this is guaranteed to be UTF-8 encoded
+text, so if needed, you can flatten out the chunks and convert back
+to @ShortText@.
+-}
 run :: Builder -> Chunks
-{-# noinline run #-}
+{-# NOINLINE run #-}
 run b = runST $ do
   bldr0 <- BBU.newBuilderState 128
   bldr1 <- pushCatenable bldr0 b
