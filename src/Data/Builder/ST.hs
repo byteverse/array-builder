@@ -1,7 +1,7 @@
-{-# language BangPatterns #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Data.Builder.ST
-  ( Builder(..)
+  ( Builder (..)
   , new
   , new1
   , push
@@ -10,26 +10,26 @@ module Data.Builder.ST
 
 import Compat (unsafeShrinkAndFreeze)
 import Control.Monad.ST (ST)
-import Data.Chunks (Chunks(ChunksNil,ChunksCons))
-import Data.Primitive (SmallMutableArray)
-import Data.Primitive (newSmallArray,writeSmallArray,unsafeFreezeSmallArray)
-import Data.Primitive (sizeofSmallArray)
+import Data.Chunks (Chunks (ChunksCons, ChunksNil))
+import Data.Primitive (SmallMutableArray, newSmallArray, sizeofSmallArray, unsafeFreezeSmallArray, writeSmallArray)
 import Foreign.Storable (sizeOf)
 
 import qualified Data.Chunks as C
 
--- | Builder for an array of boxed elements. This type is appropriate
--- when constructing an array of unknown size in an effectful
--- (@ST@ or @IO@) setting. In a non-effectful setting, consider
--- the @Builder@ from @Data.Builder@ instead.
---
--- A 'Builder' must be used linearly. The type system does not
--- enforce this, so users must be careful when handling a 'Builder'.
-data Builder s a = Builder
-  !(SmallMutableArray s a)
-  !Int
-  !Int
-  !(Chunks a)
+{- | Builder for an array of boxed elements. This type is appropriate
+when constructing an array of unknown size in an effectful
+(@ST@ or @IO@) setting. In a non-effectful setting, consider
+the @Builder@ from @Data.Builder@ instead.
+
+A 'Builder' must be used linearly. The type system does not
+enforce this, so users must be careful when handling a 'Builder'.
+-}
+data Builder s a
+  = Builder
+      !(SmallMutableArray s a)
+      !Int
+      !Int
+      !(Chunks a)
 
 -- | Create a new 'Builder' with no elements in it.
 new :: ST s (Builder s a)
@@ -37,25 +37,30 @@ new = do
   marr <- newSmallArray initialLength errorThunk
   pure (Builder marr 0 initialLength ChunksNil)
 
--- | Create a new 'Builder' with a single element. Useful when builder
--- creation is immidiately followed by 'push'. Note that:
---
--- > new >>= push x ≡ new1 x
---
--- But 'new1' performs slightly better.
+{- | Create a new 'Builder' with a single element. Useful when builder
+creation is immidiately followed by 'push'. Note that:
+
+> new >>= push x ≡ new1 x
+
+But 'new1' performs slightly better.
+-}
 new1 :: a -> ST s (Builder s a)
 new1 a0 = do
   marr <- newSmallArray initialLength a0
   pure (Builder marr 1 initialLength ChunksNil)
 
--- | Push an element onto the end of the builder. This
--- is not strict in the element, so force it before pushing
--- it on to the builder if doing so is needed to prevent
--- space leaks.
+{- | Push an element onto the end of the builder. This
+is not strict in the element, so force it before pushing
+it on to the builder if doing so is needed to prevent
+space leaks.
+-}
 push ::
-     a -- ^ Element to push onto the end
-  -> Builder s a -- ^ Builder, do not reuse this after pushing onto it
-  -> ST s (Builder s a) -- ^ New builder
+  -- | Element to push onto the end
+  a ->
+  -- | Builder, do not reuse this after pushing onto it
+  Builder s a ->
+  -- | New builder
+  ST s (Builder s a)
 push a (Builder marr off len cs) = case len > 0 of
   True -> do
     writeSmallArray marr off a
@@ -75,9 +80,10 @@ push a (Builder marr off len cs) = case len > 0 of
 -- A 254-element SmallArray on a 64-bit platform uses
 -- exactly 4KB (header + ptrs + payload).
 nextLength :: Int -> Int
-nextLength i = if i < maxElementCount - smallArrayHeaderWords
-  then i * 2 + smallArrayHeaderWords
-  else maxElementCount - smallArrayHeaderWords
+nextLength i =
+  if i < maxElementCount - smallArrayHeaderWords
+    then i * 2 + smallArrayHeaderWords
+    else maxElementCount - smallArrayHeaderWords
 
 maxElementCount :: Int
 maxElementCount = div 4096 (sizeOf (undefined :: Int))
@@ -88,16 +94,17 @@ initialLength = 16 - smallArrayHeaderWords
 smallArrayHeaderWords :: Int
 smallArrayHeaderWords = 2
 
--- | Convert a 'Builder' to 'Chunks'. The 'Builder' must not
--- be reused after this operation.
+{- | Convert a 'Builder' to 'Chunks'. The 'Builder' must not
+be reused after this operation.
+-}
 freeze ::
-     Builder s a -- ^ Builder, do not reuse after freezing
-  -> ST s (Chunks a)
+  -- | Builder, do not reuse after freezing
+  Builder s a ->
+  ST s (Chunks a)
 freeze (Builder marr off _ cs) = do
   arr <- unsafeShrinkAndFreeze marr off
   pure $! C.reverseOnto (ChunksCons arr ChunksNil) cs
 
 errorThunk :: a
-{-# noinline errorThunk #-}
+{-# NOINLINE errorThunk #-}
 errorThunk = error "array-builder:Data.Builder.ST: error"
-
