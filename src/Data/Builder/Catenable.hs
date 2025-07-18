@@ -1,5 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
 {- | Builder with cheap concatenation. Like the builder type from
@@ -62,6 +65,8 @@ data Builder a
   | Cons a !(Builder a)
   | Snoc !(Builder a) a
   | Append !(Builder a) !(Builder a)
+
+deriving stock instance Functor Builder
 
 instance Monoid (Builder a) where
   {-# INLINE mempty #-}
