@@ -2,7 +2,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 -- | @Data.Builder.Catenable@ specialized to @ShortText@.
-module Data.Builder.Catenable.Text
+module Data.Builder.Catenable.ShortText
   ( -- * Type
     Builder (..)
 
@@ -18,7 +18,6 @@ module Data.Builder.Catenable.Text
 
     -- * Create
   , shortText
-  , text
   , char
   , word32Dec
   , word64Dec
@@ -34,7 +33,6 @@ import Data.Bytes.Chunks (Chunks (ChunksNil))
 import Data.Int (Int32, Int64)
 import Data.Primitive (ByteArray (ByteArray))
 import Data.String (IsString (fromString))
-import Data.Text (Text)
 import Data.Text.Short (ShortText)
 import Data.Word (Word32, Word64)
 
@@ -43,7 +41,6 @@ import qualified Data.Bytes.Builder as BB
 import qualified Data.Bytes.Builder.Bounded as Bounded
 import qualified Data.Bytes.Builder.Unsafe as BBU
 import qualified Data.Bytes.Chunks as Chunks
-import qualified Data.Text as T
 import qualified Data.Text.Short as TS
 import qualified Data.Text.Short.Unsafe as TS
 
@@ -52,37 +49,34 @@ infixl 5 :>
 
 data Builder
   = Empty
-  | Cons !Text !Builder
-  | Snoc !Builder !Text
+  | Cons !ShortText !Builder
+  | Snoc !Builder !ShortText
   | Append !Builder !Builder
 
 shortText :: ShortText -> Builder
-shortText !t = Cons (TS.toText t) Empty
-
-text :: Text -> Builder
-text !t = Cons t Empty
+shortText !t = Cons t Empty
 
 char :: Char -> Builder
-char !c = Cons (T.singleton c) Empty
+char !c = Cons (TS.singleton c) Empty
 
 word32Dec :: Word32 -> Builder
-word32Dec !i = Cons (TS.toText (ba2st (Bounded.run Nat.constant (Bounded.word32Dec i)))) Empty
+word32Dec !i = Cons (ba2st (Bounded.run Nat.constant (Bounded.word32Dec i))) Empty
 
 word64Dec :: Word64 -> Builder
-word64Dec !i = Cons (TS.toText (ba2st (Bounded.run Nat.constant (Bounded.word64Dec i)))) Empty
+word64Dec !i = Cons (ba2st (Bounded.run Nat.constant (Bounded.word64Dec i))) Empty
 
 int32Dec :: Int32 -> Builder
-int32Dec !i = Cons (TS.toText (ba2st (Bounded.run Nat.constant (Bounded.int32Dec i)))) Empty
+int32Dec !i = Cons (ba2st (Bounded.run Nat.constant (Bounded.int32Dec i))) Empty
 
 int64Dec :: Int64 -> Builder
-int64Dec !i = Cons (TS.toText (ba2st (Bounded.run Nat.constant (Bounded.int64Dec i)))) Empty
+int64Dec !i = Cons (ba2st (Bounded.run Nat.constant (Bounded.int64Dec i))) Empty
 
 -- | Number of Unicode code points in the sequence.
 length :: Builder -> Int
 length b0 = case b0 of
   Empty -> 0
-  Cons x b1 -> T.length x + length b1
-  Snoc b1 x -> T.length x + length b1
+  Cons x b1 -> TS.length x + length b1
+  Snoc b1 x -> TS.length x + length b1
   Append x y -> length x + length y
 
 {- | Note: The choice of appending to the left side of @Empty@ instead
@@ -90,7 +84,7 @@ of the right side of arbitrary. Under ordinary use, this difference
 cannot be observed by the user.
 -}
 instance IsString Builder where
-  fromString t = Cons (T.pack t) Empty
+  fromString t = Cons (TS.pack t) Empty
 
 instance Monoid Builder where
   {-# INLINE mempty #-}
@@ -113,10 +107,10 @@ ba2st :: ByteArray -> ShortText
 {-# INLINE ba2st #-}
 ba2st (ByteArray x) = TS.fromShortByteStringUnsafe (SBS x)
 
-pattern (:<) :: Text -> Builder -> Builder
+pattern (:<) :: ShortText -> Builder -> Builder
 pattern (:<) x y = Cons x y
 
-pattern (:>) :: Builder -> Text -> Builder
+pattern (:>) :: Builder -> ShortText -> Builder
 pattern (:>) x y = Snoc x y
 
 {- | The result is chunks, but this is guaranteed to be UTF-8 encoded
@@ -134,11 +128,11 @@ pushCatenable :: BBU.BuilderState s -> Builder -> ST s (BBU.BuilderState s)
 pushCatenable !bldr0 b = case b of
   Empty -> pure bldr0
   Cons x b1 -> do
-    bldr1 <- BBU.pasteST (BB.textUtf8 x) bldr0
+    bldr1 <- BBU.pasteST (BB.shortTextUtf8 x) bldr0
     pushCatenable bldr1 b1
   Snoc b1 x -> do
     bldr1 <- pushCatenable bldr0 b1
-    BBU.pasteST (BB.textUtf8 x) bldr1
+    BBU.pasteST (BB.shortTextUtf8 x) bldr1
   Append x y -> do
     bldr1 <- pushCatenable bldr0 x
     pushCatenable bldr1 y

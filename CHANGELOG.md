@@ -1,5 +1,10 @@
 # Revision history for array-builder
 
+## 0.2.0.0 -- 2025-09-08
+
+* Rename `Data.Builder.Catenable.Text` to `Data.Builder.Catenable.ShortText`
+* Add `Data.Builder.Catenable.Text` that uses the `Text` type.
+
 ## 0.1.4.1 -- 2024-02-01
 
 * Update package metadata.
