@@ -44,6 +44,8 @@ module Data.Builder.Catenable
   , singleton
   , doubleton
   , tripleton
+  , quadrupleton
+  , quintupleton
 
     -- * Run
   , run
@@ -118,3 +120,11 @@ doubleton a b = Cons a (Cons b Empty)
 tripleton :: a -> a -> a -> Builder a
 {-# INLINE tripleton #-}
 tripleton a b c = Append (Cons a (Cons b Empty)) (Cons c Empty)
+
+quadrupleton :: a -> a -> a -> a -> Builder a
+{-# INLINE quadrupleton #-}
+quadrupleton a b c d = Append (Cons a (Cons b Empty)) (Cons c (Cons d Empty))
+
+quintupleton :: a -> a -> a -> a -> a -> Builder a
+{-# INLINE quintupleton #-}
+quintupleton a b c d e = Append (Cons a (Cons b Empty)) (Cons c (Cons d (Cons e Empty)))
