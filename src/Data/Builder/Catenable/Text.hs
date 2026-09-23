@@ -20,6 +20,8 @@ module Data.Builder.Catenable.Text
   , shortText
   , text
   , char
+  , word8PaddedUpperHex
+  , word16PaddedUpperHex
   , word32Dec
   , word64Dec
   , int32Dec
@@ -36,7 +38,7 @@ import Data.Primitive (ByteArray (ByteArray))
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Short (ShortText)
-import Data.Word (Word32, Word64)
+import Data.Word (Word8, Word16, Word32, Word64)
 
 import qualified Arithmetic.Nat as Nat
 import qualified Data.Bytes.Builder as BB
@@ -64,6 +66,12 @@ text !t = Cons t Empty
 
 char :: Char -> Builder
 char !c = Cons (T.singleton c) Empty
+
+word8PaddedUpperHex :: Word8 -> Builder
+word8PaddedUpperHex !i = Cons (TS.toText (ba2st (Bounded.run Nat.constant (Bounded.word8PaddedUpperHex i)))) Empty
+
+word16PaddedUpperHex :: Word16 -> Builder
+word16PaddedUpperHex !i = Cons (TS.toText (ba2st (Bounded.run Nat.constant (Bounded.word16PaddedUpperHex i)))) Empty
 
 word32Dec :: Word32 -> Builder
 word32Dec !i = Cons (TS.toText (ba2st (Bounded.run Nat.constant (Bounded.word32Dec i)))) Empty
